@@ -1,8 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Flame, MessageCircle, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export function BottomNav() {
   const loc = useLocation();
+  const { profile } = useAuth();
+
   const items = [
     { to: "/discover", label: "Descobrir", Icon: Flame },
     { to: "/matches",  label: "Matches",   Icon: MessageCircle },
@@ -14,6 +17,8 @@ export function BottomNav() {
       <div className="mx-auto flex max-w-md border-t border-border/40 justify-around px-2 pt-1">
         {items.map(({ to, label, Icon }) => {
           const active = loc.pathname === to || loc.pathname.startsWith(to + "/");
+          const isProfile = to === "/me";
+
           return (
             <Link
               key={to}
@@ -29,15 +34,25 @@ export function BottomNav() {
 
               <span
                 className={`grid h-8 w-8 place-items-center rounded-xl transition-all duration-200 ${
-                  active ? "bg-primary/15" : ""
+                  active && !isProfile ? "bg-primary/15" : ""
                 }`}
               >
-                <Icon
-                  className={`h-[18px] w-[18px] transition-colors duration-200 ${
-                    active ? "text-primary" : "text-muted-foreground"
-                  }`}
-                  strokeWidth={active ? 2.2 : 1.8}
-                />
+                {isProfile && profile?.photo_url ? (
+                  <img
+                    src={profile.photo_url}
+                    alt=""
+                    className={`h-7 w-7 rounded-full object-cover transition-all duration-200 ${
+                      active ? "ring-2 ring-primary" : "ring-1 ring-border"
+                    }`}
+                  />
+                ) : (
+                  <Icon
+                    className={`h-[18px] w-[18px] transition-colors duration-200 ${
+                      active ? "text-primary" : "text-muted-foreground"
+                    }`}
+                    strokeWidth={active ? 2.2 : 1.8}
+                  />
+                )}
               </span>
 
               <span

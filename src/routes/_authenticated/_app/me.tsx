@@ -45,8 +45,9 @@ function PlanBadge({ plan }: { plan: Plan }) {
 }
 
 function Me() {
-  const { user, profile, isAdmin, signOut, refreshProfile } = useAuth();
+  const { user, isAdmin, signOut, refreshProfile } = useAuth();
   const [p, setP] = useState<Full | null>(null);
+  const [photos, setPhotos] = useState<Array<{ id: string; url: string }>>([]);
   const nav = useNavigate();
 
   useEffect(() => {
@@ -55,6 +56,8 @@ function Me() {
       .select("name,age,bio,photo_url,goal,training_level,modalities,interests,available_hours,plan,status,hide_orientation,hide_hours")
       .eq("id", user.id).maybeSingle()
       .then(({ data }) => setP(data as Full | null));
+    supabase.from("user_photos").select("id,url,position").eq("user_id", user.id).order("position")
+      .then(({ data }) => setPhotos((data ?? []) as Array<{ id: string; url: string }>));
   }, [user]);
 
   async function setStatus(status: "active" | "paused" | "deleted") {
@@ -120,6 +123,19 @@ function Me() {
             {p.modalities.slice(0, 5).map((m) => (
               <span key={m} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{m}</span>
             ))}
+          </div>
+        )}
+
+        {/* Extra photos grid — estilo Instagram */}
+        {photos.length > 0 && (
+          <div className="mb-5 -mx-5">
+            <div className="grid grid-cols-3 gap-px bg-border/30">
+              {photos.map((photo) => (
+                <div key={photo.id} className="aspect-square overflow-hidden bg-muted">
+                  <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

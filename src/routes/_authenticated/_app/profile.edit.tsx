@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Lock, X, AlertTriangle, Check, Search } from "lucide-react";
+import { ArrowLeft, Camera, Lock, X, AlertTriangle, Check, Search, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/_app/profile/edit")({ component: EditProfile });
 
@@ -54,7 +54,8 @@ function toggle<T>(arr: T[], v: T): T[] {
 function EditProfile() {
   const { user, refreshProfile } = useAuth();
   const nav = useNavigate();
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRef      = useRef<HTMLInputElement>(null);
+  const extraPhotoRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<Form>({
     name: "", gender: "", sexual_orientation: "", hide_orientation: false,
@@ -66,9 +67,11 @@ function EditProfile() {
   const [interestInput, setInterestInput] = useState("");
   const [nameError,    setNameError]    = useState("");
   const [gymError,     setGymError]     = useState("");
-  const [busy,         setBusy]         = useState(false);
-  const [uploading,    setUploading]    = useState(false);
-  const [sheet,        setSheet]        = useState(false);
+  const [busy,          setBusy]          = useState(false);
+  const [uploading,     setUploading]     = useState(false);
+  const [sheet,         setSheet]         = useState(false);
+  const [photos,        setPhotos]        = useState<Array<{ id: string; url: string; position: number }>>([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
   const [allGyms,      setAllGyms]      = useState<Gym[]>([]);
   const [initialGymIds, setInitialGymIds] = useState<string[]>([]);
   const [gymSearch,    setGymSearch]    = useState("");
@@ -99,6 +102,8 @@ function EditProfile() {
       });
     supabase.from("gyms").select("id,name,address").eq("active", true).order("name")
       .then(({ data }) => setAllGyms((data ?? []) as Gym[]));
+    supabase.from("user_photos").select("id,url,position").eq("user_id", user.id).order("position")
+      .then(({ data }) => setPhotos((data ?? []) as Array<{ id: string; url: string; position: number }>));
     supabase.from("user_gyms").select("gym_id").eq("user_id", user.id)
       .then(({ data }) => {
         const ids = (data ?? []).map((r) => r.gym_id as string);
@@ -131,6 +136,45 @@ function EditProfile() {
     const { error } = await supabase.from("profiles").update({ photo_url: null }).eq("id", user.id);
     if (error) return toast.error(error.message);
     setForm((f) => ({ ...f, photo_url: null }));
+    toast.success("Foto removida");
+  }
+
+  async function uploadExtraPhoto(file: File) {
+    if (!user) return;
+    if (photos.length >= 5) { toast.error("Máximo de 5 fotos extras"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("A foto deve ter no máximo 10 MB"); return; }
+    setPhotoUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/photos/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: false });
+      if (upErr) { toast.error(upErr.message); return; }
+      const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const nextPos = photos.length > 0 ? Math.max(...photos.map((p) => p.position)) + 1 : 0;
+      const { data: inserted, error } = await supabase
+        .from("user_photos")
+        .insert({ user_id: user.id, url: urlData.publicUrl, position: nextPos })
+        .select("id,url,position")
+        .single();
+      if (error) { toast.error(error.message); return; }
+      setPhotos((prev) => [...prev, inserted as { id: string; url: string; position: number }]);
+      toast.success("Foto adicionada");
+    } catch (e) {
+      toast.error((e as any)?.message ?? "Falha ao enviar foto");
+    } finally { setPhotoUploading(false); }
+  }
+
+  async function deleteExtraPhoto(id: string, url: string) {
+    if (!user) return;
+    const marker = "/avatars/";
+    const markerIndex = url.indexOf(marker);
+    const { error } = await supabase.from("user_photos").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    if (markerIndex !== -1) {
+      const bucketPath = decodeURIComponent(url.slice(markerIndex + marker.length));
+      await supabase.storage.from("avatars").remove([bucketPath]);
+    }
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
     toast.success("Foto removida");
   }
 
@@ -232,6 +276,52 @@ function EditProfile() {
             </div>
           )}
         </div>
+
+        {/* Fotos extras */}
+        <Section title="Fotos do perfil">
+          <p className="-mt-1 mb-3 text-sm text-muted-foreground">
+            Adicione até 5 fotos para aparecerem no seu perfil.
+          </p>
+          <input
+            ref={extraPhotoRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => { if (e.target.files?.[0]) uploadExtraPhoto(e.target.files[0]); e.target.value = ""; }}
+          />
+          <div className="grid grid-cols-3 gap-2">
+            {photos.map((photo) => (
+              <div key={photo.id} className="relative aspect-square overflow-hidden rounded-2xl bg-muted">
+                <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => deleteExtraPhoto(photo.id, photo.url)}
+                  className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-background/80 backdrop-blur"
+                  aria-label="Remover foto"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+            {photos.length < 5 && (
+              <button
+                type="button"
+                onClick={() => extraPhotoRef.current?.click()}
+                disabled={photoUploading}
+                className="aspect-square rounded-2xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center gap-1.5 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50"
+              >
+                {photoUploading ? (
+                  <span className="text-xs animate-pulse">Enviando…</span>
+                ) : (
+                  <>
+                    <Plus className="h-5 w-5" />
+                    <span className="text-[11px] font-medium">Adicionar</span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </Section>
 
         {/* Informações pessoais */}
         <Section title="Informações pessoais">
