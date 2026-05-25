@@ -17,8 +17,9 @@ GymMatch é um app de conexões para pessoas que frequentam academia — um "Tin
 
 - **Auth** — cadastro, login e sessão via Supabase Auth
 - **Onboarding** — preenchimento de perfil, foto e academia antes de entrar no app
-- **Descobrir** — swipe em perfis da mesma academia com curtida/rejeição
-- **Matches** — match automático quando dois usuários se curtem mutuamente
+- **Descobrir** — swipe gestual (arrastar para direita = curtir, esquerda = rejeitar) com animação de rotação e overlay CURTIR/NOPE estilo Tinder
+- **Solicitações de match** — ao curtir alguém, a pessoa recebe uma notificação em Matches e pode aceitar ou recusar; match criado apenas ao aceitar
+- **Matches** — lista de conexões confirmadas com chat em tempo real
 - **Chat** — mensagens em tempo real via Supabase Realtime; envio de imagens (Gold/Diamond)
 - **Planos** — Free, Gold (R$ 29,90/mês) e Diamond (R$ 59,90/mês) com restrições por plano
 - **Segurança** — bloquear e denunciar usuários direto pelo chat
@@ -65,7 +66,7 @@ VITE_GROQ_API_KEY="gsk_..."
 bun dev
 ```
 
-App disponível em `http://localhost:3000`.
+App disponível em `http://localhost:8080`.
 
 ## Estrutura do projeto
 
