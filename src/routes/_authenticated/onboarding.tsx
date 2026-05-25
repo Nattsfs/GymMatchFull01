@@ -200,9 +200,25 @@ function Onboarding() {
             <input type="file" accept="image/*" className="ipt" onChange={(e) => setForm({ ...form, photoFile: e.target.files?.[0] ?? null })} />
             {form.photoFile && <p className="mt-1 text-xs text-muted-foreground">{form.photoFile.name}</p>}
           </Field>
-          <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" checked={form.terms} onChange={(e) => setForm({ ...form, terms: e.target.checked })} className="mt-1" />
-            <span>Tenho 18 anos ou mais e aceito os Termos de Uso e a Política de Privacidade (LGPD).</span>
+          <label className="flex items-start gap-3 cursor-pointer">
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={form.terms}
+              onClick={() => setForm({ ...form, terms: !form.terms })}
+              className={`mt-0.5 shrink-0 h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                form.terms ? "border-primary bg-gradient-primary" : "border-border bg-transparent"
+              }`}
+            >
+              {form.terms && (
+                <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="2,6 5,9 10,3" />
+                </svg>
+              )}
+            </button>
+            <span className="text-sm text-muted-foreground leading-snug">
+              Tenho 18 anos ou mais e aceito os Termos de Uso e a Política de Privacidade (LGPD).
+            </span>
           </label>
         </div>
       ),
@@ -213,24 +229,37 @@ function Onboarding() {
 
   return (
     <div className="mx-auto min-h-screen max-w-md px-6 py-8">
-      <style>{`.ipt{width:100%;border-radius:1rem;border:1px solid var(--border);background:var(--card);padding:.85rem 1rem;color:var(--foreground);outline:none}.ipt:focus{box-shadow:0 0 0 2px var(--ring)}`}</style>
-      <div className="flex gap-1">
+      {/* Progress */}
+      <div className="flex gap-1.5">
         {steps.map((_, i) => (
-          <div key={i} className={`h-1 flex-1 rounded-full ${i <= step ? "bg-gradient-primary" : "bg-muted"}`} />
+          <div key={i} className={`h-1 flex-1 rounded-full transition-all duration-300 ${i <= step ? "bg-gradient-primary" : "bg-muted"}`} />
         ))}
       </div>
-      <h1 className="mt-6 font-display text-2xl font-bold">{current.title}</h1>
-      <p className="text-sm text-muted-foreground">Etapa {step + 1} de {steps.length}</p>
+
+      <p className="mt-4 text-xs font-medium text-muted-foreground tracking-wide">
+        ETAPA {step + 1} DE {steps.length}
+      </p>
+      <h1 className="mt-1 font-display text-2xl font-bold tracking-tight">{current.title}</h1>
+
       <div className="mt-6">{current.body}</div>
 
       <div className="mt-8 flex gap-3">
         {step > 0 && (
-          <button onClick={() => setStep(step - 1)} className="flex-1 rounded-2xl border border-border bg-card py-3.5 font-medium">Voltar</button>
+          <button onClick={() => setStep(step - 1)}
+            className="flex-1 rounded-2xl border border-border/70 bg-card py-3.5 text-sm font-semibold hover:bg-accent transition-colors">
+            Voltar
+          </button>
         )}
         {step < steps.length - 1 ? (
-          <button onClick={() => setStep(step + 1)} className="flex-1 rounded-2xl bg-gradient-primary py-3.5 font-semibold text-primary-foreground shadow-glow">Avançar</button>
+          <button onClick={() => setStep(step + 1)}
+            className="flex-1 rounded-2xl bg-gradient-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-glow">
+            Avançar
+          </button>
         ) : (
-          <button disabled={busy} onClick={finish} className="flex-1 rounded-2xl bg-gradient-primary py-3.5 font-semibold text-primary-foreground shadow-glow disabled:opacity-60">{busy ? "Salvando..." : "Concluir"}</button>
+          <button disabled={busy} onClick={finish}
+            className="flex-1 rounded-2xl bg-gradient-primary py-3.5 text-sm font-semibold text-primary-foreground shadow-glow disabled:opacity-50">
+            {busy ? "Salvando…" : "Concluir"}
+          </button>
         )}
       </div>
     </div>
@@ -239,17 +268,21 @@ function Onboarding() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block">
-      <span className="mb-1.5 block text-sm font-medium text-muted-foreground">{label}</span>
+    <div>
+      <span className="mb-1.5 block text-sm font-medium text-foreground/80">{label}</span>
       {children}
-    </label>
+    </div>
   );
 }
 
 function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button type="button" onClick={onClick}
-      className={`rounded-full border px-3 py-2 text-sm transition ${active ? "border-primary bg-gradient-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-primary/50"}`}>
+      className={`rounded-full border px-3.5 py-2 text-sm font-medium transition-all duration-150 ${
+        active
+          ? "border-primary bg-gradient-primary text-white shadow-glow"
+          : "border-border/70 bg-card text-foreground/80 hover:border-primary/40"
+      }`}>
       {children}
     </button>
   );

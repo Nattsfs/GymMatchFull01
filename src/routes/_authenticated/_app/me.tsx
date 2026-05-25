@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Pencil, LogOut, Pause, Trash2, Crown, Shield } from "lucide-react";
+import { Pencil, LogOut, Pause, Trash2, Crown, Shield, ChevronRight, Play } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/_app/me")({ component: Me });
 
@@ -14,23 +14,35 @@ type Full = {
   available_hours: string[]; plan: Plan; status: string;
   hide_orientation: boolean; hide_hours: boolean;
 };
-const PLAN_LABEL: Record<Plan, string> = { free: "Grátis", gold: "Gold", diamond: "Diamond", premium: "Premium" };
 
 const GOAL_LABELS: Record<string, string> = {
-  friends: "amizade",
-  training_partner: "parceiro de treino",
-  romance: "romance",
+  friends: "Amizade",
+  training_partner: "Parceiro de treino",
+  romance: "Romance",
 };
 const LEVEL_LABELS: Record<string, string> = {
   beginner: "Iniciante",
   intermediate: "Intermediário",
   advanced: "Avançado",
 };
-const STATUS_MESSAGES: Record<string, string> = {
-  active: "Conta reativada",
-  paused: "Conta pausada",
-  deleted: "Conta excluída",
-};
+
+function PlanBadge({ plan }: { plan: Plan }) {
+  if (plan === "diamond") return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-2.5 py-0.5 text-[11px] font-bold text-white shadow">
+      💎 Diamond
+    </span>
+  );
+  if (plan === "gold") return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-2.5 py-0.5 text-[11px] font-bold text-black shadow">
+      👑 Gold
+    </span>
+  );
+  return (
+    <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+      Grátis
+    </span>
+  );
+}
 
 function Me() {
   const { user, profile, isAdmin, signOut, refreshProfile } = useAuth();
@@ -39,7 +51,10 @@ function Me() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("name,age,bio,photo_url,goal,training_level,modalities,interests,available_hours,plan,status,hide_orientation,hide_hours").eq("id", user.id).maybeSingle().then(({ data }) => setP(data as Full | null));
+    supabase.from("profiles")
+      .select("name,age,bio,photo_url,goal,training_level,modalities,interests,available_hours,plan,status,hide_orientation,hide_hours")
+      .eq("id", user.id).maybeSingle()
+      .then(({ data }) => setP(data as Full | null));
   }, [user]);
 
   async function setStatus(status: "active" | "paused" | "deleted") {
@@ -47,65 +62,130 @@ function Me() {
     const { error } = await supabase.from("profiles").update({ status }).eq("id", user.id);
     if (error) return toast.error(error.message);
     await supabase.from("audit_logs").insert({ actor_id: user.id, action: `profile.${status}` });
-    toast.success(STATUS_MESSAGES[status] ?? "Atualizado");
     if (status === "deleted") { await signOut(); nav({ to: "/" }); }
-    else refreshProfile();
+    else { toast.success(status === "paused" ? "Conta pausada" : "Conta reativada"); refreshProfile(); }
   }
-
 
   if (!p) return <div className="grid min-h-[60vh] place-items-center text-muted-foreground">Carregando...</div>;
 
-  return (
-    <div className="px-6 pt-6">
-      <h1 className="font-display text-2xl font-bold">Perfil</h1>
-      <div className="mt-6 flex items-center gap-4">
-        <div className="h-20 w-20 overflow-hidden rounded-2xl bg-muted">
-          {p.photo_url && <img src={p.photo_url} alt="" className="h-full w-full object-cover" />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="font-display text-xl font-bold">{p.name ?? "—"}{p.age ? `, ${p.age}` : ""}</p>
-          <p className="text-sm text-muted-foreground">{p.training_level ? (LEVEL_LABELS[p.training_level] ?? p.training_level) : ""}{p.goal ? ` · ${GOAL_LABELS[p.goal] ?? p.goal}` : ""}</p>
-          <span
-            className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
-              p.plan === "diamond"
-                ? "bg-gradient-to-r from-cyan-400 to-blue-500 text-white shadow"
-                : p.plan === "gold"
-                  ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-black shadow"
-                  : "bg-accent text-foreground"
-            }`}
-          >
-            {p.plan === "diamond" && "💎 "}
-            {p.plan === "gold" && "👑 "}
-            {PLAN_LABEL[p.plan] ?? "Grátis"}
-          </span>
+  const isPaused = p.status === "paused";
 
+  return (
+    <div>
+      {/* Hero */}
+      <div className="relative h-60 bg-muted overflow-hidden">
+        {p.photo_url
+          ? <img src={p.photo_url} alt="" className="h-full w-full object-cover" />
+          : <div className="h-full w-full bg-gradient-to-br from-muted to-card" />
+        }
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+
+        {/* Edit button */}
+        <Link
+          to="/profile/edit"
+          className="absolute top-4 right-4 flex items-center gap-1.5 rounded-full bg-background/70 backdrop-blur px-3 py-1.5 text-xs font-semibold"
+        >
+          <Pencil className="h-3 w-3" /> Editar
+        </Link>
+
+        {/* Name + info */}
+        <div className="absolute bottom-0 left-0 right-0 px-5 pb-4">
+          <div className="flex items-end justify-between">
+            <div>
+              <h1 className="font-display text-2xl font-bold leading-tight">
+                {p.name ?? "—"}{p.age ? `, ${p.age}` : ""}
+              </h1>
+              {(p.training_level || p.goal) && (
+                <p className="mt-0.5 text-sm text-foreground/70">
+                  {p.training_level ? LEVEL_LABELS[p.training_level] : ""}
+                  {p.training_level && p.goal ? " · " : ""}
+                  {p.goal ? GOAL_LABELS[p.goal] : ""}
+                </p>
+              )}
+            </div>
+            <PlanBadge plan={p.plan} />
+          </div>
         </div>
       </div>
 
-      {p.bio && <p className="mt-4 text-sm text-muted-foreground">{p.bio}</p>}
-
-      <div className="mt-8 grid gap-2">
-        <Link to="/profile/edit" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
-          <Pencil className="h-5 w-5" /> Editar perfil
-        </Link>
-        <Link to="/premium" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
-          <Crown className="h-5 w-5 text-primary" /> Ver Premium
-        </Link>
-        {isAdmin && (
-          <Link to="/admin" className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
-            <Shield className="h-5 w-5" /> Painel administrativo
-          </Link>
+      <div className="px-5 pt-4 pb-4">
+        {/* Bio */}
+        {p.bio && (
+          <p className="text-sm text-muted-foreground leading-relaxed mb-5">{p.bio}</p>
         )}
-        <button onClick={() => setStatus(p.status === "paused" ? "active" : "paused")} className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left">
-          <Pause className="h-5 w-5" /> {p.status === "paused" ? "Reativar conta" : "Pausar conta"}
-        </button>
-        <button onClick={signOut} className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left">
-          <LogOut className="h-5 w-5" /> Sair
-        </button>
-        <button onClick={() => { if (confirm("Excluir conta? Seus dados serão mantidos por conformidade.")) setStatus("deleted"); }} className="flex w-full items-center gap-3 rounded-2xl border border-destructive/40 bg-card p-4 text-left text-destructive">
-          <Trash2 className="h-5 w-5" /> Excluir conta
-        </button>
+
+        {/* Modalities chips */}
+        {p.modalities?.length > 0 && (
+          <div className="mb-5 flex flex-wrap gap-1.5">
+            {p.modalities.slice(0, 5).map((m) => (
+              <span key={m} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{m}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Menu */}
+        <div className="space-y-1.5">
+          <MenuItem to="/premium" icon={<Crown className="h-4 w-4 text-amber-400" />} label="Ver Premium" />
+          {isAdmin && <MenuItem to="/admin" icon={<Shield className="h-4 w-4 text-blue-400" />} label="Painel administrativo" />}
+
+          <div className="my-3 h-px bg-border/50" />
+
+          <ActionItem
+            icon={isPaused
+              ? <Play className="h-4 w-4 text-green-400" />
+              : <Pause className="h-4 w-4 text-muted-foreground" />
+            }
+            label={isPaused ? "Reativar conta" : "Pausar conta"}
+            onClick={() => setStatus(isPaused ? "active" : "paused")}
+          />
+          <ActionItem
+            icon={<LogOut className="h-4 w-4 text-muted-foreground" />}
+            label="Sair"
+            onClick={signOut}
+          />
+
+          <div className="my-3 h-px bg-border/50" />
+
+          <ActionItem
+            icon={<Trash2 className="h-4 w-4 text-destructive" />}
+            label="Excluir conta"
+            danger
+            onClick={() => {
+              if (confirm("Excluir conta? Seus dados serão mantidos por conformidade.")) setStatus("deleted");
+            }}
+          />
+        </div>
       </div>
     </div>
+  );
+}
+
+function MenuItem({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 rounded-2xl bg-card/60 border border-border/60 px-4 py-3.5 hover:bg-card transition-colors"
+    >
+      <span className="shrink-0">{icon}</span>
+      <span className="flex-1 text-sm font-medium">{label}</span>
+      <ChevronRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+    </Link>
+  );
+}
+
+function ActionItem({ icon, label, onClick, danger }: {
+  icon: React.ReactNode; label: string; onClick: () => void; danger?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-2xl border border-border/60 px-4 py-3.5 text-left transition-colors ${
+        danger ? "bg-destructive/5 hover:bg-destructive/10 border-destructive/20" : "bg-card/60 hover:bg-card"
+      }`}
+    >
+      <span className="shrink-0">{icon}</span>
+      <span className={`flex-1 text-sm font-medium ${danger ? "text-destructive" : ""}`}>{label}</span>
+    </button>
   );
 }

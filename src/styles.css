@@ -2,6 +2,7 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* ---------- Lucia notification animation ---------- */
 @keyframes lucia-notif-enter {
   from { opacity: 0; transform: translateY(-16px) scale(0.95); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
@@ -66,7 +67,7 @@
   --secondary: oklch(0.22 0.015 280);
   --secondary-foreground: oklch(0.98 0.005 60);
   --muted: oklch(0.22 0.012 280);
-  --muted-foreground: oklch(0.68 0.02 280);
+  --muted-foreground: oklch(0.62 0.02 280);
   --accent: oklch(0.27 0.04 25);
   --accent-foreground: oklch(0.98 0.005 60);
   --destructive: oklch(0.62 0.22 25);
@@ -76,9 +77,9 @@
   --border: oklch(0.25 0.015 280);
   --input: oklch(0.22 0.012 280);
   --ring: oklch(0.68 0.21 22);
-  --gradient-primary: linear-gradient(135deg, oklch(0.68 0.21 22), oklch(0.82 0.13 30));
+  --gradient-primary: linear-gradient(135deg, oklch(0.68 0.21 22), oklch(0.78 0.18 30));
   --gradient-card: linear-gradient(180deg, oklch(0.2 0.015 280), oklch(0.14 0.01 280));
-  --shadow-glow: 0 20px 60px -15px color-mix(in oklab, oklch(0.68 0.21 22) 50%, transparent);
+  --shadow-glow: 0 8px 32px -8px color-mix(in oklab, oklch(0.68 0.21 22) 45%, transparent);
   --sidebar: oklch(0.15 0.01 280);
   --sidebar-foreground: oklch(0.98 0.005 60);
   --sidebar-primary: oklch(0.68 0.21 22);
@@ -89,19 +90,68 @@
   --sidebar-ring: oklch(0.68 0.21 22);
 }
 
-.dark {
-  /* same as root — app is dark-by-default */
-}
+.dark { /* same as root — app is dark-by-default */ }
 
 @layer base {
   * { border-color: var(--color-border); }
-  html, body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); }
-  h1, h2, h3, h4, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  html, body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
+  }
+
+  /* Scrollbar sutil */
+  ::-webkit-scrollbar { width: 3px; height: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 99px; }
 }
 
 @layer utilities {
   .bg-gradient-primary { background-image: var(--gradient-primary); }
-  .bg-gradient-card { background-image: var(--gradient-card); }
-  .shadow-glow { box-shadow: var(--shadow-glow); }
-  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 1rem); }
+  .bg-gradient-card    { background-image: var(--gradient-card); }
+  .shadow-glow         { box-shadow: var(--shadow-glow); }
+  .safe-bottom         { padding-bottom: max(env(safe-area-inset-bottom), 1rem); }
 }
+
+/* ---------- Input / Select base ---------- */
+.ipt {
+  width: 100%;
+  border-radius: 0.875rem;
+  border: 1.5px solid var(--color-border);
+  background: var(--color-card);
+  padding: 0.8rem 1rem;
+  color: var(--color-foreground);
+  outline: none;
+  font-size: 0.9375rem;
+  font-family: var(--font-sans);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.ipt::placeholder { color: var(--color-muted-foreground); }
+.ipt:focus {
+  border-color: var(--color-ring);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-ring) 18%, transparent);
+}
+
+/* Select: seta customizada */
+select.ipt {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+select.ipt option { background: oklch(0.17 0.012 280); }
