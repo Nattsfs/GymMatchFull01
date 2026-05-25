@@ -340,7 +340,8 @@ function EditProfile() {
           <div className="relative mb-2">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <input
-              className="ipt pl-9"
+              className="ipt"
+              style={{ paddingLeft: "2.5rem" }}
               placeholder="Buscar academia…"
               value={gymSearch}
               onChange={(e) => setGymSearch(e.target.value)}
