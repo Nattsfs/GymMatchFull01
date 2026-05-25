@@ -52,11 +52,24 @@ function Discover() {
     if (!user) return;
     setLoading(true);
 
-    if (!profile?.gym_id) {
+    // Pega todas as academias do usuário (user_gyms tem precedência; fallback para gym_id do perfil)
+    const { data: myGymRows } = await supabase
+      .from("user_gyms").select("gym_id").eq("user_id", user.id);
+    const myGymIds: string[] = myGymRows?.map((r) => r.gym_id as string) ?? [];
+    if (myGymIds.length === 0 && profile?.gym_id) myGymIds.push(profile.gym_id);
+
+    if (myGymIds.length === 0) {
       setCards([]);
       setLoading(false);
       return;
     }
+
+    // Usuários que compartilham pelo menos uma academia via user_gyms
+    const { data: sharedRows } = await supabase
+      .from("user_gyms").select("user_id")
+      .in("gym_id", myGymIds)
+      .neq("user_id", user.id);
+    const viaTableIds = [...new Set(sharedRows?.map((r) => r.user_id as string) ?? [])];
 
     // Exclude users already liked/rejected
     const { data: liked } = await supabase
@@ -71,19 +84,26 @@ function Discover() {
       [b.blocker_id, b.blocked_id].filter((id) => id !== user.id)
     );
 
-    const exclude = Array.from(new Set([user.id, ...likedIds, ...blockedIds]));
+    const exclude = new Set([user.id, ...likedIds, ...blockedIds]);
+    const filteredViaTable = viaTableIds.filter((id) => !exclude.has(id));
+
+    // OR: gym_id principal está nas minhas academias  OU  aparece em user_gyms compartilhado
+    // Isso cobre usuários que só fizeram onboarding (só têm gym_id) e quem editou o perfil
+    const gymFilter = `gym_id.in.(${myGymIds.join(",")})`;
+    const tableFilter = filteredViaTable.length > 0 ? `,id.in.(${filteredViaTable.join(",")})` : "";
 
     let query = supabase
       .from("profiles")
       .select("id,name,age,bio,photo_url,goal,training_level,modalities,interests,available_hours,hide_hours")
-      .eq("gym_id", profile.gym_id)
+      .or(gymFilter + tableFilter)
       .eq("status", "active")
       .eq("profile_complete", true)
       .not("photo_url", "is", null)
       .limit(50);
 
-    if (exclude.length > 0) {
-      query = query.not("id", "in", `(${exclude.join(",")})`);
+    const excludeArr = [...exclude];
+    if (excludeArr.length > 0) {
+      query = query.not("id", "in", `(${excludeArr.join(",")})`);
     }
 
     const { data, error } = await query;
@@ -152,7 +172,7 @@ function Discover() {
   }
 
   if (loading) return <Loader />;
-  if (!profile?.gym_id) return <Empty title="Sua academia não está definida." body="Atualize seu perfil para ver membros." />;
+  if (!profile?.gym_id) return <Empty title="Nenhuma academia selecionada." body="Adicione uma academia no seu perfil para ver membros." />;
   const card = cards[i];
   if (!card) return (
     <div className="px-4 pt-6">

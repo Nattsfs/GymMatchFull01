@@ -107,6 +107,8 @@ function Onboarding() {
         terms_accepted_at: new Date().toISOString(),
       }).eq("id", user.id);
       if (error) throw error;
+      // Garante entrada em user_gyms para que o Descobrir multi-academia funcione
+      await supabase.from("user_gyms").upsert({ user_id: user.id, gym_id: form.gym_id }, { onConflict: "user_id,gym_id" });
       toast.success("Tudo pronto!");
       await refreshProfile();
       nav({ to: "/discover" });
