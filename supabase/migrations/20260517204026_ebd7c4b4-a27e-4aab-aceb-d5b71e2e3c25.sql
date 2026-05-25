@@ -1,0 +1,2 @@
+ALTER TYPE plan_type ADD VALUE IF NOT EXISTS 'gold';
+ALTER TYPE plan_type ADD VALUE IF NOT EXISTS 'diamond';

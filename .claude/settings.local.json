@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\joaov\\\\Downloads\\\\Gym Connection \\(2\\)\" -Force)",
+      "PowerShell(cd \"c:\\\\Users\\\\joaov\\\\Downloads\\\\Gym Connection \\(2\\)\"; Get-ChildItem -Force | Format-Table Name, @{Name='Type'; Expression={if\\($_.PSIsContainer\\) {'Dir'} else {'File'}}})",
+      "PowerShell(cd \"c:\\\\Users\\\\joaov\\\\Downloads\\\\Gym Connection \\(2\\)\"; Get-ChildItem -Path \".\\\\src\" -Recurse | Select-Object -First 50 FullName | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path, '.'\\) })",
+      "PowerShell(cd \"c:\\\\Users\\\\joaov\\\\Downloads\\\\Gym Connection \\(2\\)\"; Get-ChildItem -Path \".\\\\supabase\" -Recurse 2>$null | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path, '.'\\) })",
+      "PowerShell(cd \"c:\\\\Users\\\\joaov\\\\Downloads\\\\Gym Connection \\(2\\)\"; Get-ChildItem -Path \".\\\\.lovable\" -Recurse 2>$null | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path, '.'\\) })",
+      "PowerShell(cd \"c:\\\\Users\\\\joaov\\\\Downloads\\\\Gym Connection \\(2\\)\"; Get-ChildItem -Path \".\\\\src\\\\integrations\" -Recurse | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\(\\(Get-Location\\).Path, '.'\\) })",
+      "Bash(npm --version)",
+      "Bash(bun --version)",
+      "Bash(powershell -Command \"irm bun.sh/install.ps1 | iex\")",
+      "Bash(rm -rf \"c:/Users/joaov/Downloads/Gym Connection \\(2\\)/node_modules\" && echo \"removido\")",
+      "Bash(/c/Users/joaov/.bun/bin/bun install *)",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\joaov\\Downloads\\Gym Connection (2)\\node_modules"
+    ]
+  }
+}
