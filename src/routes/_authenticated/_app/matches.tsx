@@ -27,7 +27,12 @@ function Matches() {
   const [luciaUnread, setLuciaUnread] = useState(0);
   const [limitOpen, setLimitOpen] = useState(false);
 
-  useEffect(() => { setLuciaUnread(getLuciaUnread()); }, []);
+  useEffect(() => {
+    setLuciaUnread(getLuciaUnread());
+    function onHistoryChanged() { setLuciaUnread(getLuciaUnread()); }
+    window.addEventListener("lucia:history-changed", onHistoryChanged);
+    return () => window.removeEventListener("lucia:history-changed", onHistoryChanged);
+  }, []);
 
   useEffect(() => {
     async function load() {
